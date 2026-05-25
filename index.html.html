@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paradigm Shift: Sequência Kuhniana</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e1e2e; color: #cdd6f4; text-align: center; margin: 0; padding: 20px; }
+        h1 { color: #f5c2e7; margin-bottom: 5px; }
+        h3 { margin-top: 0; color: #bac2de; }
+        .setup, .game-container { background: #313244; padding: 20px; border-radius: 12px; max-width: 1000px; margin: 20px auto; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        .hidden { display: none; }
+        
+        .legend { display: flex; justify-content: center; gap: 15px; margin: 15px 0; font-size: 14px; }
+        .legend-item { display: flex; align-items: center; gap: 5px; }
+        .dot { width: 12px; height: 12px; border-radius: 3px; }
+
+        .board { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin: 20px 0; }
+        .tile { padding: 15px; border-radius: 8px; border: 3px solid #585b70; min-height: 80px; text-align: center; background: #1e1e2e; display: flex; flex-direction: column; justify-content: space-between; }
+        .tile h4 { margin: 5px 0; font-size: 14px; color: #fff; }
+        .badge { display: inline-block; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; color: #11111b; margin: 0 auto; }
+
+        .ciencia-normal { border-color: #a6e3a1; } .ciencia-normal .badge { background-color: #a6e3a1; }
+        .anomalia { border-color: #f9e2af; } .anomalia .badge { background-color: #f9e2af; }
+        .crise { border-color: #fab387; } .crise .badge { background-color: #fab387; }
+        .revolucao { border-color: #f38ba8; } .revolucao .badge { background-color: #f38ba8; }
+        .novo-paradigma { border-color: #cba6f7; background: #2e2538; } .novo-paradigma .badge { background-color: #cba6f7; }
+
+        .tokens-container { margin-top: 10px; display: flex; gap: 5px; justify-content: center; min-height: 24px; }
+        .player-token { display: inline-block; width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff; font-weight: bold; font-size: 12px; text-align: center; line-height: 24px; color: white; }
+        .p1 { background-color: #ff007f; } .p2 { background-color: #00f0ff; } .p3 { background-color: #ffaa00; } .p4 { background-color: #a020f0; }
+        
+        .status-board { display: flex; justify-content: space-around; background: #181825; padding: 15px; border-radius: 8px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+        .status-card { text-align: left; min-width: 150px; padding: 5px; border-left: 4px solid #585b70; padding-left: 10px; }
+        .sc-1 { border-color: #ff007f; } .sc-2 { border-color: #00f0ff; } .sc-3 { border-color: #ffaa00; } .sc-4 { border-color: #a020f0; }
+        
+        button { background: #89b4fa; color: #11111b; border: none; padding: 12px 24px; font-size: 16px; font-weight: bold; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+        button:hover { background: #b4befe; }
+        .card-display { background: #3c3e54; border: 2px dashed #f5c2e7; padding: 20px; margin: 20px auto; max-width: 650px; border-radius: 8px; min-height: 80px; box-sizing: border-box; }
+        .card-type-title { font-weight: bold; text-transform: uppercase; margin-bottom: 8px; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+    <h1>🚀 De Newton à Relatividade</h1>
+    <h3>A Transição Dinâmica da Física Clássica para a Relatividade</h3>
+
+    <div id="setup" class="setup">
+        <h3>Selecione o número de Grupos de Investigação (2-4):</h3>
+        <button onclick="startGame(2)">2 Grupos</button>
+        <button onclick="startGame(3)">3 Grupos</button>
+        <button onclick="startGame(4)">4 Grupos</button>
+    </div>
+
+    <div id="game-container" class="game-container hidden">
+        
+        <div class="legend">
+            <div class="legend-item"><div class="dot" style="background:#a6e3a1"></div> Ciência Normal</div>
+            <div class="legend-item"><div class="dot" style="background:#f9e2af"></div> Anomalia</div>
+            <div class="legend-item"><div class="dot" style="background:#fab387"></div> Crise</div>
+            <div class="legend-item"><div class="dot" style="background:#f38ba8"></div> Revolução Científica</div>
+            <div class="legend-item"><div class="dot" style="background:#cba6f7"></div> Novo Paradigma</div>
+        </div>
+
+        <div class="status-board" id="status-board"></div>
+
+        <div id="turn-controls">
+            <h2 id="current-turn-text">Turno do Grupo 1</h2>
+            <button onclick="playTurn()">Avançar Investigação (Dado + Carta)</button>
+        </div>
+
+        <div class="card-display" id="card-display">
+            <strong>A comunidade científica aguarda dados...</strong><br>Lance o dado para apanhar uma carta da fase em que se encontra.
+        </div>
+
+        <h3>Linha de Evolução Científica</h3>
+        <div class="board" id="board"></div>
+    </div>
+
+    <script>
+        // Casas simplificadas apenas com Título, ordenadas por Ciência Normal -> Anomalia Correspondente -> Crises -> 1 Revolução -> Novo Paradigma
+        const originalTiles = [
+            { id: 1, type: "ciencia-normal", label: "Ciência Normal", name: "1. Mecânica de Newton" },
+            { id: 2, type: "anomalia", label: "Anomalia", name: "2. Órbita de Mercúrio" },
+            { id: 3, type: "ciencia-normal", label: "Ciência Normal", name: "3. Óptica Corpuscular" },
+            { id: 4, type: "anomalia", label: "Anomalia", name: "4. Fenda Dupla de Young" },
+            { id: 5, type: "ciencia-normal", label: "Ciência Normal", name: "5. Eletromagnetismo de Maxwell" },
+            { id: 6, type: "anomalia", label: "Anomalia", name: "6. Experiência de Michelson-Morley" },
+            { id: 7, type: "ciencia-normal", label: "Ciência Normal", name: "7. Radiação do Corpo Negro" },
+            { id: 8, type: "anomalia", label: "Anomalia", name: "8. Catástrofe do Ultravioleta" },
+            { id: 9, type: "crise", label: "Crise", name: "9. Contração de Lorentz" },
+            { id: 10, type: "crise", label: "Crise", name: "10. O Quanta de Planck" },
+            { id: 11, type: "revolucao", label: "Revolução Científica", name: "11. Publicação de Einstein (1905)" },
+            { id: 12, type: "novo-paradigma", label: "Novo Paradigma", name: "12. Relatividade Geral (1915)" }
+        ];
+
+        // Narrativa e consequências movidas na totalidade para o baralho de cartas correspondente à fase
+        const deck = {
+            "ciencia-normal": [
+                { text: "História: O paradigma funciona perfeitamente. O vosso grupo publica na Royal Society cálculos precisos usando as leis vigentes. Ganham 3 Fichas de Prestígio.", prest: 3 },
+                { text: "História: Trabalho padrão de laboratório. Resolveram pequenos quebra-cabeças matemáticos da mecânica clássica. Ganham 2 Fichas de Prestígio.", prest: 2 }
+            ],
+            "anomalia": [
+                { text: "História: Alerta experimental! Os dados recolhidos contradizem os pressupostos do paradigma vigente. A comunidade está cética. Perdem 1 Ficha de Prestígio a calibrar os aparelhos.", prest: -1 },
+                { text: "História: Uma falha inexplicável surge nas vossas observações diretas. Embora incomode, vocês não conseguem descartar o erro humano. Ficam sem variação de prestígio.", prest: 0 }
+            ],
+            "crise": [
+                { text: "História: O paradigma clássico racha! As anomalias acumularam-se e os físicos começam a perder a confiança nas fundações da mecânica de Newton. Perdem 2 Fichas de Prestígio na confusão teórica.", prest: -2 },
+                { text: "História: Insegurança na comunidade! Para tentar resolver os paradoxos, vocês começam a estudar geometrias não-euclidianas alternativas. Ganham 1 Ficha de Prestígio pela audácia.", prest: 1 }
+            ],
+            "revolucao": [
+                { text: "História: Einstein propõe que o espaço e o tempo são flexíveis e dinâmicos! Rompimento absoluto com o passado. Se tiverem prestígio suficiente, podem validar a teoria.", prest: 0 }
+            ],
+            "novo-paradigma": [
+                { text: "História: O tecido do espaço-tempo curva-se na presença de massa. A Relatividade é confirmada!", prest: 0 }
+            ]
+        };
+
+        let players = [];
+        let numPlayers = 2;
+        let currentPlayerIdx = 0;
+        const TOTAL_TILES = 12;
+        const PRESTIGE_NEEDED = 8;
+
+        function startGame(n) {
+            numPlayers = n;
+            players = [];
+            for (let i = 1; i <= n; i++) {
+                players.push({ id: i, name: `Grupo ${i}`, position: 1, prestige: 0 });
+            }
+            document.getElementById("setup").classList.add("hidden");
+            document.getElementById("game-container").classList.remove("hidden");
+            renderBoard();
+            updateStatus();
+        }
+
+        function renderBoard() {
+            const boardDiv = document.getElementById("board");
+            boardDiv.innerHTML = "";
+            originalTiles.forEach(tile => {
+                let tileHtml = `<div class="tile ${tile.type}" id="tile-${tile.id}">
+                    <span class="badge">${tile.label}</span>
+                    <h4>${tile.name}</h4>
+                    <div class="tokens-container">`;
+                
+                players.forEach(p => {
+                    if (p.position === tile.id) {
+                        tileHtml += `<span class="player-token p${p.id}">${p.id}</span>`;
+                    }
+                });
+
+                tileHtml += `</div></div>`;
+                boardDiv.innerHTML += tileHtml;
+            });
+        }
+
+        function updateStatus() {
+            const statusDiv = document.getElementById("status-board");
+            statusDiv.innerHTML = "";
+            players.forEach(p => {
+                statusDiv.innerHTML += `
+                    <div class="status-card sc-${p.id}">
+                        <strong>🟢 ${p.name}</strong><br>
+                        Posição: Casa ${p.position}/${TOTAL_TILES}<br>
+                        Prestígio: 🧪 <b>${p.prestige}</b> / ${PRESTIGE_NEEDED}
+                    </div>
+                `;
+            });
+            document.getElementById("current-turn-text").innerText = `Turno do ${players[currentPlayerIdx].name}`;
+        }
+
+        function playTurn() {
+            let p = players[currentPlayerIdx];
+            
+            // Lançar dado (Avança de 1 a 2 casas)
+            let diceRoll = Math.floor(Math.random() * 2) + 1;
+            p.position = Math.min(p.position + diceRoll, TOTAL_TILES);
+
+            // Identificar o tipo de casa onde o jogador aterrou
+            let currentTile = originalTiles[p.position - 1];
+            let tileType = currentTile.type;
+
+            // Retirar uma carta do baralho correspondente àquela fase específica
+            let availableCards = deck[tileType];
+            let card = availableCards[Math.floor(Math.random() * availableCards.length)];
+            
+            // Aplicar efeitos da carta
+            p.prestige = Math.max(0, p.prestige + card.prest);
+
+            // Exibir a carta graficamente na consola visual
+            let colorMap = { "ciencia-normal": "#a6e3a1", "anomalia": "#f9e2af", "crise": "#fab387", "revolucao": "#f38ba8", "novo-paradigma": "#cba6f7" };
+            
+            document.getElementById("card-display").innerHTML = `
+                <div style="color: ${colorMap[tileType]}" class="card-type-title">Fase Atual: ${currentTile.label} (Casa ${p.position})</div>
+                <div style="font-size: 15px;">"${card.text}"</div>
+                <div style="margin-top: 10px; font-size: 12px; color: #a6adc8;">O dado deu ${diceRoll} marchar de turnos.</div>
+            `;
+
+            // Condição de Vitória na última casa (Novo Paradigma) com prestígio de validação revolucionária
+            if (p.position === TOTAL_TILES && p.prestige >= PRESTIGE_NEEDED) {
+                document.getElementById("card-display").innerHTML = `🎉 <b>MUDANÇA DE PARADIGMA CONCLUÍDA!</b><br>O <b>${p.name}</b> liderou a comunidade científica rumo à Relatividade de Einstein. A revolução está consolidada e vocês venceram o jogo!`;
+                document.getElementById("turn-controls").innerHTML = "<h2>Fim de Jogo!</h2>";
+                renderBoard();
+                updateStatus();
+                return;
+            } else if (p.position === TOTAL_TILES && p.prestige < PRESTIGE_NEEDED) {
+                document.getElementById("card-display").innerHTML += `<br><br><span style="color:#fab387">⚠️ <b>Bloqueio na Comunidade:</b> Alcançaram o final da linha, mas falta-vos Prestígio Científico (${p.prestige}/${PRESTIGE_NEEDED}) para que os vossos pares aceitem a Relatividade. Continuem a acumular evidências!</span>`;
+            }
+
+            // Mudar jogador
+            currentPlayerIdx = (currentPlayerIdx + 1) % numPlayers;
+            renderBoard();
+            updateStatus();
+        }
+    </script>
+</body>
+</html>
